@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <button id="move" onclick="redraw()">Move</button>
+    <br>
+    <canvas id="canvas" width="1500" height="1000"></canvas>
+</body>
+<script>
+    var canvas=document.getElementById("canvas");
+    var ctx=canvas.getContext("2d");
+
+    class Cell {
+        constructor(x,y){
+            this.x=x;
+            this.y=y;
+        }
+    }
+    
+    const strings=
+        [
+        "   6 4  4 6 6       6  3  4 4  3  6        6 ",
+        "5         89  8 9 9               7 9 8 8   5",
+        "  7   2 5   888 88 5   4  55   6    7 8 7 8  ",
+        "  7 1   76 6        2   5 67 6 7  6  778 88  ",
+        " 96    68      75   4  445  555    4  678   6",
+        "    1  68   998 4 24 4  33 4 4332 56 5 788 7 ",
+        " 8    3  6 79  3 12 4 2233 2  2  54 4 55 89  ",
+        "   6   45      1  112  1 1 2 2 4 54  4 6     ",
+        "  77 44   78    11   12 3 2    4 5      6  9 ",
+        "6  8    7 8   2        0 2  1 3 5  6  4   5  ",
+        "   89 9  98  2   3 3      43 034  5          ",
+        "  8 89     7   45 4   2 12 42   6   67   4 66",
+        " 8  77   99 3 3 55  2  4   5   7 5   5777    ",
+        "6       8  5     444   442 4456  752 4 77 3 4",
+        "  987  8    21  4  5 3   32 4  9 9    5  4   ",
+        " 987    89        3     4 2   577  765 34 4  ",
+        "687   5 786 2   7  34 3 5 31 44  676  23    3",
+        "5  2 1 2 6   688 4 3 6  6  0  3 4 4 2223 7   ",
+        "      5      6988  4544354  0  43 2    5 75  ",
+        "  433   4   2  9 865   46   3    1  22 56   4",
+        "6     3  8    5   5 2    3    22   2   6     ",
+        " 7  3 3  78     3  2  4 5   3 33 5 3 3 6 5666",
+        " 8       8 7    2     5 33  3 3  77 4 4 7    ",
+        "68  9 9 8   5  1 33    6    33 56    4476668 ",
+        " 89  9  9  9742  3  4  6 4  6       3  76   5",
+        " 88   8 8 88   143534    5 55 66 1 2 577 688 ",
+        " 77   89       2 3 2 2    45 5 642 335   68 4",
+        "4 78 7 8    877  2  2  0  32   6  2 5 6    7 ",
+        " 6687  7 89 888       1  12   2 3     5 877 4",
+        "2   77  8  7  98    1   1  3     2    789    ",
+        "  3  76788  87   6   2 21 3      13  77 775 2",
+        " 1 35    77 88   7 5  2 12 3 2 2   67 8 7 5  ",
+        "2 3 3323 66  778   8 6 5   4545 6  898 7 5 2 ",
+        "    3   2        7   9 7    6   89   7       ",
+        "2 21 1    2 3 55 5  5   6  6 6  6 65   3 2 0 "
+        ]
+
+    const gridWidth = strings[0].length;
+    const gridHeight = strings.length;
+
+    let grid=[];
+    for (let row=0;row<gridHeight+4;row++){
+        let rowCells=[];
+        for (let col=0;col<gridWidth+4;col++){
+            let cell=new Cell(row,col);
+            cell.value=-1;
+            if(row>=2 && row <gridHeight+2 && col>=2 && col<gridWidth+2){
+                const val=strings[row-2].substr(col-2,1)
+                if (val!=" ") cell.value=val;
+                else cell.value=-1;
+                cell.ident='unknown';
+            }
+            else {
+                cell.ident='clear';
+            }
+            rowCells.push(cell);
+        }
+        grid.push(rowCells);
+    }
+    
+    function computeOneCell() {
+        let didAThing=false;
+        for (let row=2;row<=grid.length-2;row++){
+            for (let col=2;col<grid[0].length-2;col++){
+                
+                //only consider cells with a value
+                const total=parseInt(grid[row][col].value)
+                if (total!=-1){
+                    //count
+                    let solidCount=0;
+                    let clearCount=0;
+                    let unknownCount=0;
+                    for (let i=row-1;i<=row+1;i++){
+                        for (let j=col-1;j<=col+1;j++){
+                            if (grid[i][j].ident=='solid') {solidCount++};
+                            if (grid[i][j].ident=='clear') {clearCount++};
+                            if (grid[i][j].ident=='unknown') {unknownCount++};                                                        
+                        }
+                    }
+                              
+                    //respond
+                    if (unknownCount==total-solidCount){
+                        //set all to solid
+                        for (let i=row-1;i<=row+1;i++){
+                            for (let j=col-1;j<=col+1;j++){
+                                if (grid[i][j].ident=='unknown'){
+                                    grid[i][j].ident='solid';
+                                    didAThing=true;
+                                }
+                            }
+                        }
+                    }                        
+                    
+                    if (solidCount==total){
+                        //set all to clear
+                        for (let i=row-1;i<=row+1;i++){
+                            for (let j=col-1;j<=col+1;j++){
+                                if (grid[i][j].ident=='unknown'){
+                                    grid[i][j].ident='clear';
+                                    didAThing=true;
+                                }
+                            }
+                        }
+                    }                                    
+                }          
+                if (didAThing) break;
+            }
+            if (didAThing) break;
+        }
+        return didAThing;
+    }
+
+    function redraw(){
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        //computeOneCell();
+        for (let row=0;row<gridHeight;row++){
+            for (let col=0;col<gridWidth;col++){
+                ctx.lineWidth=2;
+                ctx.strokeStyle="black";
+                ctx.beginPath();
+                ctx.rect(col*20,row*20,20,20);
+                ctx.stroke();
+
+                if (grid[row][col].ident=="clear"){
+                    ctx.save();
+                    ctx.fillStyle="lightgray";
+                    ctx.fillRect(col*20,row*20,20,20);
+                    ctx.beginPath();
+                    ctx.strokeStyle="silver";
+                    ctx.moveTo(col*20,row*20);
+                    ctx.lineTo(col*20+20,row*20+20);
+                    ctx.moveTo(col*20+20,row*20);
+                    ctx.lineTo(col*20,row*20+20);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+                if (grid[row][col].ident=="solid"){
+                    ctx.save();
+                    ctx.fillStyle="darkslategray";
+                    ctx.fillRect(col*20,row*20,20,20);
+                    ctx.restore();
+                }
+
+                if (grid[row][col].value>=0){
+                    let cellText=grid[row][col].value;
+                    ctx.save()
+                    ctx.translate(col*20,row*20);
+                    ctx.translate(10,10);                    
+                    ctx.textBaseline="middle";
+                    ctx.textAlign="center";
+                    if (grid[row][col].ident=="solid") {
+                        ctx.fillStyle="white";
+                        ctx.font="13px Arial";                        
+                    }
+                    else {
+                        ctx.fillStyle="black";
+                        ctx.font="bold 13px Arial";
+                    }
+                    ctx.fillText(cellText,0,0);
+                    ctx.restore();
+                }
+            }
+        }
+     }
+
+     function delay(time){
+         return new Promise(resolve=>setTimeout(resolve,time));
+     }
+
+     async function test(){
+         let workRemains;
+
+         for(let i=0;i<1000;i++){
+            workRemains = computeOneCell();
+            await delay(10);
+            redraw();
+            if (!workRemains) {
+                console.log('Finished in ',i)
+                break;
+            }
+         }         
+     }
+
+     test();
+</script>
+<style>
+    body{background-color: ivory;}
+    #canvas{border:1px solid red; margin:0 auto;}
+</style>
+</html>
