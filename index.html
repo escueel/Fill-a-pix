@@ -7,9 +7,11 @@
     <title>Document</title>
 </head>
 <body>
-    <button id="move" onclick="redraw()">Move</button>
+    <button id="move" onclick="test()">Basic</button>
     <br>
-    <canvas id="canvas" width="1500" height="1000"></canvas>
+    <button id="consider" onclick="consider()">Consider</button>
+    <br>
+    <canvas id="canvas" width="2000 " height="1000"></canvas>
 </body>
 <script>
     var canvas=document.getElementById("canvas");
@@ -22,7 +24,7 @@
         }
     }
     
-    const strings=
+    const basicStrings=
         [
         "   6 4  4 6 6       6  3  4 4  3  6        6 ",
         "5         89  8 9 9               7 9 8 8   5",
@@ -61,6 +63,20 @@
         "2 21 1    2 3 55 5  5   6  6 6  6 65   3 2 0 "
         ]
 
+    const strings = [
+        "2   4 32    3  4  21 34 3 2 23 4 444 2    2 44 3 44 4   1 0 ",
+        "  5      4       5  4  5        4      2   4    5    43  1 2",
+        "4 4 4 33 5  3 4   5 4 3 4 4333   5464   31324455   33 3 3 3 ",
+        "3 34453 4  4 4  43 45 2123  3 3  4 655 5      4 33 22  3   2",
+        "  443 2   3 444 323  33121  2    5 54   4   45  22 233 3 2 1",
+        " 4 544 44 4 344  4 3   1  2    4 43  4    34  42  35 5 2 2 2",
+        "  4 33   6 5 4 4  4  432 2 4  333   3 3  344   3   4 3 3 3  ",
+        "2 4 3 2 455 5    6  5 2   2 2 2 4  4  4564 5 4 4 2    6 44  ",
+        "2 5 23 335   66  33 4 3   3  3 3 45  3  4  4  5     3445   2",
+        "  4 2 2 2 55 77  4 5  4  4 5   23443   4454  4  4 2   3  2 2",
+        "                                                            ",
+        "                                                            "
+    ]
     const gridWidth = strings[0].length;
     const gridHeight = strings.length;
 
@@ -79,11 +95,95 @@
             else {
                 cell.ident='clear';
             }
+            cell.solved=false;
             rowCells.push(cell);
         }
         grid.push(rowCells);
     }
     
+    function findCell(){
+        const row=19;
+        const col=9;
+        const rowP=row-1;
+        const colP=col+1
+
+        ctx.save()
+        ctx.lineWidth=3;
+        ctx.strokeStyle="red";
+        ctx.beginPath();
+        ctx.rect(col*20,row*20,20,20);
+        ctx.stroke();
+        ctx.restore();
+        
+
+        ctx.save()
+        ctx.lineWidth=3;
+        ctx.strokeStyle="blue";
+        ctx.beginPath();
+        ctx.rect(colP*20,rowP*20,20,20);
+        ctx.stroke();
+        ctx.restore()
+
+        ctx.save()
+        ctx.lineWidth=2;
+        ctx.strokeStyle="red";
+        ctx.beginPath();
+        ctx.rect((col-1)*20,(row-1)*20,20*3,20*3);
+        ctx.stroke();
+        ctx.restore()
+
+        ctx.save()
+        ctx.lineWidth=2;
+        ctx.strokeStyle="blue";
+        ctx.beginPath();
+        ctx.rect((colP-1)*20,(rowP-1)*20,20*3,20*3);
+        ctx.stroke();
+        ctx.restore()
+
+        //this is the region in the top right of main cell
+        let region=[[-1,0],[-1,1],[0,0],[0,1]];
+        for (let i=0;i<region.length;i++) {
+            console.log(col,row,region[1],region[0])
+            ctx.save()
+            ctx.fillStyle="lightgray";
+            ctx.fillRect((col+region[i][1])*20,(row+region[i][0])*20,20,20);
+            ctx.restore()
+        }
+
+        // //this is the antiregion in the top right of main cell
+        // for (let r=-1;r<=1;r++){
+        //     for (let c=-1;c<=1;c++){
+        //         if (!region.includes([r,c])){
+        //             ctx.save()
+        //             ctx.fillStyle="green";
+        //             ctx.fillRect((col+c)*20,(row+r)*20,20,20);
+        //             ctx.restore() 
+        //         }
+        //     }
+        // }
+
+        // //this is the region in the bottom left of prime cell
+        let regionP=[[0,-1],[0,0],[1,-1],[1,0]];
+        // for (let i=0;i<regionP.length;i++) {
+        //     ctx.save()
+        //     ctx.fillStyle="lightblue";
+        //     ctx.fillRect((colP+regionP[i][1])*20,(rowP+regionP[i][0])*20,20,20);
+        //     ctx.restore()
+        // }
+
+        //this is the antiregion in the top right of prime cell
+        for (let r=-1;r<=1;r++){
+            for (let c=-1;c<=1;c++){
+                if (!(regionP.includes([r,c]))){
+                    ctx.save()
+                    ctx.fillStyle="orange";
+                    ctx.fillRect((colP+c)*20,(rowP+r)*20,20,20);
+                    ctx.restore() 
+                }
+            }
+        }
+    }
+
     function computeOneCell() {
         let didAThing=false;
         for (let row=2;row<=grid.length-2;row++){
@@ -91,7 +191,7 @@
                 
                 //only consider cells with a value
                 const total=parseInt(grid[row][col].value)
-                if (total!=-1){
+                if (total!=-1  && !grid[row][col].solved==true){
                     //count
                     let solidCount=0;
                     let clearCount=0;
@@ -106,6 +206,7 @@
                               
                     //respond
                     if (unknownCount==total-solidCount){
+                        grid[row][col].solved=true;
                         //set all to solid
                         for (let i=row-1;i<=row+1;i++){
                             for (let j=col-1;j<=col+1;j++){
@@ -118,6 +219,7 @@
                     }                        
                     
                     if (solidCount==total){
+                        grid[row][col].solved=true;
                         //set all to clear
                         for (let i=row-1;i<=row+1;i++){
                             for (let j=col-1;j<=col+1;j++){
@@ -139,8 +241,8 @@
     function redraw(){
         ctx.clearRect(0,0,canvas.width,canvas.height);
         //computeOneCell();
-        for (let row=0;row<gridHeight;row++){
-            for (let col=0;col<gridWidth;col++){
+        for (let row=0;row<gridHeight+4;row++){
+            for (let col=0;col<gridWidth+4;col++){
                 ctx.lineWidth=2;
                 ctx.strokeStyle="black";
                 ctx.beginPath();
@@ -185,6 +287,43 @@
                     ctx.fillText(cellText,0,0);
                     ctx.restore();
                 }
+
+                if (row==consideredRow && col==consideredCol){
+                    let cellText=grid[row][col].value;
+                    ctx.save()
+                    ctx.translate(col*20,row*20);
+                    ctx.translate(10,10);                    
+                    ctx.textBaseline="middle";
+                    ctx.textAlign="center";
+                    if (grid[row][col].ident=="solid") {
+                        ctx.fillStyle="red";
+                        ctx.font="13px Arial";                        
+                    }
+                    else {
+                        ctx.fillStyle="red";
+                        ctx.font="bold 13px Arial";
+                    }
+                    ctx.fillText(cellText,0,0);
+                    ctx.restore();
+                }
+                if (row==relatedRow && col==relatedCol){
+                    let cellText=grid[row][col].value;
+                    ctx.save()
+                    ctx.translate(col*20,row*20);
+                    ctx.translate(10,10);                    
+                    ctx.textBaseline="middle";
+                    ctx.textAlign="center";
+                    if (grid[row][col].ident=="solid") {
+                        ctx.fillStyle="blue";
+                        ctx.font="13px Arial";                        
+                    }
+                    else {
+                        ctx.fillStyle="blue";
+                        ctx.font="bold 13px Arial";
+                    }
+                    ctx.fillText(cellText,0,0);
+                    ctx.restore();
+                }
             }
         }
      }
@@ -195,10 +334,9 @@
 
      async function test(){
          let workRemains;
-
          for(let i=0;i<1000;i++){
             workRemains = computeOneCell();
-            await delay(10);
+            await delay(0.01);
             redraw();
             if (!workRemains) {
                 console.log('Finished in ',i)
@@ -207,7 +345,167 @@
          }         
      }
 
-     test();
+     const advancedLogicRules=
+         [
+             {relatedCell:[0,1],
+              overlap:[2,3,5,6,8,9],
+              relatedOverlap:[1,2,4,5,7,8]
+             },
+             {relatedCell:[0,2],
+              overlap:[3,6,9],
+              relatedOverlap:[1,4,7]
+             },
+             {relatedCell:[1,0],
+              overlap:[4,5,6,7,8,9],
+              relatedOverlap:[1,2,3,4,5,6]
+             },
+             {relatedCell:[1,1],
+              overlap:[5,6,8,9],
+              relatedOverlap:[1,2,4,5]
+             },
+             {relatedCell:[1,2],
+              overlap:[6,9],
+              relatedOverlap:[1,4]
+             },
+             {relatedCell:[2,0],
+              overlap:[7,8,9],
+              relatedOverlap:[1,2,3]
+             },
+             {relatedCell:[2,1],
+              overlap:[8,9],
+              relatedOverlap:[1,2]
+             }
+         ]
+
+    let consideredRow=0;
+    let consideredCol=0;
+    let relatedRow=0;
+    let relatedCol=0;
+
+    class Considered{
+        constructor(rowC,colC,rowR,colR){
+            this.rowC=rowC;
+            this.colC=colC;
+            this.rowR=rowR;
+            this.colR=colR;
+        }
+    }
+
+    let considered=[];
+    function consideredContainsPair(rowC,colC,rowR,colR){
+        for (let i=0;i<considered.length;i++){
+            if(considered[i].rowC==rowC &&
+               considered[i].colC==colC &&
+               considered[i].rowR==rowR &&
+               considered[i].colR==colR  
+            ){
+                return true;
+            }
+        }
+        let newObj=new Considered(rowC,colC,rowR,colR);
+        considered.push(newObj);
+        return false;
+    }
+
+    function consider(){
+        let foundAThing=false;
+        for (rowC=0;rowC<grid.length;rowC++){
+            for (colC=0;colC<grid[0].length;colC++){
+
+                if ((grid[rowC][colC].value)!=-1 && !grid[rowC][colC].solved==true){
+                    //this cell has a value
+                    for (let ruleNum=0;ruleNum<advancedLogicRules.length;ruleNum++){
+                        let rowR=rowC+advancedLogicRules[ruleNum].relatedCell[0];
+                        let colR=colC+advancedLogicRules[ruleNum].relatedCell[1];
+                            if(parseInt(grid[rowR][colR].value)!=-1 && !grid[rowR][colR].solved==true){
+                                if(!consideredContainsPair(rowC,colC,rowR,colR)){
+                                    foundAThing=true;
+                                    consideredRow=rowC;
+                                    consideredCol=colC;
+                                    relatedRow=rowR;
+                                    relatedCol=colR;
+                                    //calc c outer 
+                                    
+                                    //calc c overlap
+                                    //calc r outer
+                                    //calc r overlap 
+                                    //fix overlap
+                                    //fill c outer
+                                    //fill r outer
+                                }
+                            }
+                        console.log(rowC,colC,rowR,colR,grid[rowC][colC].consideredCells)
+                        if(foundAThing) break;
+                    }
+                    if (foundAThing) grid[rowC][colC].considered=true;
+                }
+                if (foundAThing) break;
+            }
+            if (foundAThing) break;
+        }
+        redraw();
+    }
+
+    function calcRegion(row,col,squares,useAntiRegion){
+        let total=0;
+        let clear=0;
+        let solid=0;
+        let undef=0;
+        let minSolid=0;
+        let maxSolid=0;
+        let minClear=0;
+        let maxClear=0;
+
+        if(useAntiRegion){
+            let newSquares=[];
+            for (let i=1;i<=9;i++){
+                if (!squares.includes(i)){
+                    newSquares.push(i);
+                }
+            }
+            squares=newSquares;
+        }
+
+        let cellRow,cellCol;
+        if(squares.includes(1)){
+            
+        }
+        if(squares.includes(2)){
+            
+        }
+        if(squares.includes(3)){
+            
+        }
+        if(squares.includes(4)){
+            
+        }
+        if(squares.includes(5)){
+            
+        }
+        if(squares.includes(6)){
+            
+        }
+        if(squares.includes(7)){
+            
+        }
+        if(squares.includes(8)){
+            
+        }
+        if(squares.includes(9)){
+            
+        }
+        return {
+            total,
+            clear,
+            solid,
+            undef,
+            minSolid,
+            maxSolid,
+            minClear,
+            maxClear
+        }
+    }
+
 </script>
 <style>
     body{background-color: ivory;}
