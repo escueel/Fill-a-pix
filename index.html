@@ -63,7 +63,7 @@
         "2 21 1    2 3 55 5  5   6  6 6  6 65   3 2 0 "
         ]
 
-    const strings = [
+    const advancedStrings = [
         "2   4 32    3  4  21 34 3 2 23 4 444 2    2 44 3 44 4   1 0 ",
         "  5      4       5  4  5        4      2   4    5    43  1 2",
         "4 4 4 33 5  3 4   5 4 3 4 4333   5464   31324455   33 3 3 3 ",
@@ -77,6 +77,15 @@
         "                                                            ",
         "                                                            "
     ]
+
+    const strings=[
+        "          ",
+        "          ",
+        "    25    ",
+        "          ",
+        "          "
+    ]
+
     const gridWidth = strings[0].length;
     const gridHeight = strings.length;
 
@@ -417,24 +426,34 @@
                     for (let ruleNum=0;ruleNum<advancedLogicRules.length;ruleNum++){
                         let rowR=rowC+advancedLogicRules[ruleNum].relatedCell[0];
                         let colR=colC+advancedLogicRules[ruleNum].relatedCell[1];
-                            if(parseInt(grid[rowR][colR].value)!=-1 && !grid[rowR][colR].solved==true){
+                            let cellValue=parseInt(grid[rowR][colR].value;
+                            if(cellValue!=-1 && !grid[rowR][colR].solved==true){
                                 if(!consideredContainsPair(rowC,colC,rowR,colR)){
                                     foundAThing=true;
                                     consideredRow=rowC;
                                     consideredCol=colC;
                                     relatedRow=rowR;
                                     relatedCol=colR;
+                                    console.log(ruleNum);
                                     //calc c outer 
-                                    
+                                    let region1=calcRegion(rowC,colC,advancedLogicRules[ruleNum].overlap,true);
+                                    console.log(region1);
                                     //calc c overlap
-                                    //calc r outer
-                                    //calc r overlap 
+                                    let region2=calcRegion(rowC,colC,advancedLogicRules[ruleNum].overlap,false);
+                                    console.log(region2);
+                                    //calc r overlap
+                                    let region3=calcRegion(rowR,colR,advancedLogicRules[ruleNum].relatedOverlap,false);
+                                    console.log(region3);
+                                    //calc r outer 
+                                    let region4=calcRegion(rowR,colR,advancedLogicRules[ruleNum].relatedOverlap,true);
+                                    console.log(region4);
                                     //fix overlap
+                                    region1.min=Math.max(region1.min,cellValue-region2.total+region2.solid)
                                     //fill c outer
                                     //fill r outer
                                 }
                             }
-                        console.log(rowC,colC,rowR,colR,grid[rowC][colC].consideredCells)
+                        console.log(rowC,colC,rowR,colR)
                         if(foundAThing) break;
                     }
                     if (foundAThing) grid[rowC][colC].considered=true;
@@ -450,11 +469,9 @@
         let total=0;
         let clear=0;
         let solid=0;
-        let undef=0;
-        let minSolid=0;
-        let maxSolid=0;
-        let minClear=0;
-        let maxClear=0;
+        let unknown=0;
+        let min=0;
+        let max=0;
 
         if(useAntiRegion){
             let newSquares=[];
@@ -466,43 +483,33 @@
             squares=newSquares;
         }
 
-        let cellRow,cellCol;
-        if(squares.includes(1)){
-            
+        for (let i=0;i<squares.length;i++){
+            let rowOffSet = Math.floor((squares[i]-1)/3)-1;
+            let colOffSet = (squares[i]-1)%3-1;
+            total++;
+            switch (grid[row+rowOffSet][col+colOffSet].ident) {
+                case 'clear':
+                    clear++;
+                    break;
+                case 'solid':
+                    solid++;
+                    break;
+                case 'unknown':
+                    unknown++;
+                    break;
         }
-        if(squares.includes(2)){
-            
-        }
-        if(squares.includes(3)){
-            
-        }
-        if(squares.includes(4)){
-            
-        }
-        if(squares.includes(5)){
-            
-        }
-        if(squares.includes(6)){
-            
-        }
-        if(squares.includes(7)){
-            
-        }
-        if(squares.includes(8)){
-            
-        }
-        if(squares.includes(9)){
-            
+
+        min=0;
+        max=Math.min(grid[row][col].value,unknown);
+
         }
         return {
             total,
             clear,
             solid,
-            undef,
-            minSolid,
-            maxSolid,
-            minClear,
-            maxClear
+            unknown,
+            min,
+            max
         }
     }
 
